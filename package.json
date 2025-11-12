@@ -1,0 +1,14 @@
+{
+  "name": "rapor_digital",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+     "dev:frontend": "npm --workspace frontend run dev",
+    "dev:backend": "npm --workspace backend run dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

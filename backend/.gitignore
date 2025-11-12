@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+package-lock.json
+
+# logs
+logs
+*.log
+
+# runtime data
+pids
+*.pid
+*.seed
+
+# environment
+.env
+.env.local
+
+# compiled files
+dist/
