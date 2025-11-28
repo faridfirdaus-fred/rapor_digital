@@ -24,38 +24,44 @@ Aplikasi web modern untuk mengelola rapor digital di lingkungan sekolah. Sistem 
 ## ✨ Fitur Utama
 
 ### 🎯 Untuk Admin & Guru
-- ✅ **Dashboard Interaktif** - Statistik dan overview data sekolah
-- 👥 **Manajemen Siswa** - CRUD data siswa lengkap dengan foto
-- 📚 **Manajemen Kelas** - Pengelolaan kelas dan wali kelas
-- 📖 **Mata Pelajaran** - Daftar mata pelajaran dengan KKM
-- 📊 **Input Nilai** - Input nilai pengetahuan, keterampilan, dan sikap
-- 📄 **Generate Rapor** - Cetak rapor digital otomatis
-- 🔐 **Autentikasi & Otorisasi** - Role-based access control
+- ✅ **Dashboard Interaktif** - Tampilan card untuk setiap kelas dengan jumlah siswa
+- 👥 **Manajemen Siswa** - CRUD data siswa lengkap dengan NISN, nama, dan nomor absen
+- 📚 **Manajemen Kelas** - Pengelolaan kelas dengan tingkat
+- 📊 **Input Nilai** - Input nilai harian dan UAS untuk berbagai mata pelajaran
+- 🔢 **Perhitungan Otomatis** - Total nilai dan rata-rata dihitung otomatis
+- 📋 **Sorting Fleksibel** - Urutkan siswa berdasarkan absen, abjad, atau ranking
+- 🏆 **Ranking Otomatis** - Ranking dihitung di backend berdasarkan rata-rata nilai
 
-### 👨‍🎓 Untuk Siswa & Orang Tua
-- 📊 **Lihat Nilai** - Akses nilai per mata pelajaran
-- 📋 **Lihat Rapor** - Preview rapor semester
-- 📥 **Download Rapor** - Download rapor dalam format PDF
+### 📊 Fitur Detail
+- **CRUD Kelas**: Buat, edit, dan hapus kelas
+- **CRUD Siswa**: Kelola data siswa dengan atribut NISN, nama, dan nomor absen
+- **CRUD Nilai**: 
+  - Kelola nilai per mata pelajaran
+  - Kolom nilai harian dan UAS
+  - Dapat menambahkan nilai kapan saja
+  - Tampilkan total dan rata-rata
+- **Sorting Multi-mode**:
+  - Berdasarkan nomor absen
+  - Berdasarkan nama (A-Z)
+  - Berdasarkan ranking (rata-rata nilai tertinggi)
+- **Perhitungan Otomatis**:
+  - Jumlah total nilai per siswa
+  - Rata-rata nilai per siswa
+  - Ranking berdasarkan performa akademik
 
 ## 🚀 Tech Stack
-
-### Frontend
-- **React 19.2** - UI Library dengan komponen modern
-- **Vite 7.2** - Build tool cepat dan efisien
-- **React Router** - Navigasi dan routing
-- **Axios** - HTTP client untuk API calls
-- **Tailwind CSS** - Utility-first CSS framework
-- **React Icons** - Icon library
-- **Zustand** - State management (planned)
 
 ### Backend
 - **Node.js** - JavaScript runtime
 - **Express 5.1** - Web framework minimalis dan fleksibel
-- **MongoDB** - NoSQL database (planned)
-- **Mongoose** - ODM untuk MongoDB (planned)
-- **JWT** - Authentication dengan JSON Web Token (planned)
-- **Bcrypt** - Password hashing (planned)
+- **In-memory Database** - Data storage sementara (dapat di-upgrade ke MongoDB/PostgreSQL)
 - **Nodemon** - Auto-restart saat development
+
+### Frontend
+- **React 19.2** - UI Library dengan komponen modern
+- **Vite 7.2** - Build tool cepat dan efisien
+- **Tailwind CSS 4.1** - Utility-first CSS framework
+- **Axios-like fetch** - HTTP client untuk API calls
 
 ### DevOps & Tools
 - **ESLint** - Code linting
@@ -69,12 +75,16 @@ rapor_digital/
 ├── backend/                    # Backend Express.js
 │   ├── src/
 │   │   ├── index.js           # Entry point backend
-│   │   ├── config/            # Konfigurasi (database, env)
-│   │   ├── controllers/       # Business logic
-│   │   ├── models/            # Database models
-│   │   ├── routes/            # API routes
-│   │   ├── middlewares/       # Custom middlewares
-│   │   └── utils/             # Helper functions
+│   │   ├── models/            # Database models (Kelas, Siswa, Nilai)
+│   │   │   ├── database.js    # In-memory database
+│   │   │   ├── Kelas.js       # Model Kelas
+│   │   │   ├── Siswa.js       # Model Siswa
+│   │   │   └── Nilai.js       # Model Nilai
+│   │   └── routes/            # API routes
+│   │       ├── kelas.js       # Routes untuk kelas
+│   │       ├── siswa.js       # Routes untuk siswa
+│   │       └── nilai.js       # Routes untuk nilai
+│   ├── .env.example
 │   ├── .gitignore
 │   └── package.json
 │
@@ -83,13 +93,22 @@ rapor_digital/
 │   ├── src/
 │   │   ├── assets/            # Images, fonts, etc.
 │   │   ├── components/        # Reusable components
+│   │   │   ├── KelasCard.jsx       # Card component untuk kelas
+│   │   │   ├── KelasForm.jsx       # Form CRUD kelas
+│   │   │   ├── SiswaTable.jsx      # Tabel siswa
+│   │   │   ├── SiswaForm.jsx       # Form CRUD siswa
+│   │   │   ├── NilaiModal.jsx      # Modal untuk nilai
+│   │   │   └── NilaiForm.jsx       # Form CRUD nilai
 │   │   ├── pages/             # Page components
+│   │   │   ├── HomePage.jsx        # Homepage dengan card kelas
+│   │   │   └── KelasDetailPage.jsx # Detail kelas dengan tabel siswa
 │   │   ├── services/          # API services
-│   │   ├── store/             # State management
-│   │   ├── utils/             # Helper functions
+│   │   │   └── api.js         # API calls ke backend
 │   │   ├── App.jsx            # Root component
 │   │   ├── main.jsx           # Entry point
 │   │   └── index.css          # Global styles
+│   ├── .env
+│   ├── .env.example
 │   ├── index.html
 │   ├── vite.config.js
 │   ├── .gitignore
@@ -106,7 +125,6 @@ Sebelum memulai, pastikan Anda telah menginstall:
 
 - **Node.js** (v18.0.0 atau lebih baru) - [Download](https://nodejs.org/)
 - **npm** (v9.0.0 atau lebih baru) - Terinstall otomatis dengan Node.js
-- **MongoDB** (v6.0 atau lebih baru) - [Download](https://www.mongodb.com/try/download/community) *(untuk fase development selanjutnya)*
 - **Git** - [Download](https://git-scm.com/)
 - **Text Editor** - Disarankan [VS Code](https://code.visualstudio.com/)
 
@@ -141,45 +159,19 @@ Perintah di atas akan menginstall dependencies untuk:
 
 ### 3️⃣ Konfigurasi Environment Variables
 
-#### Backend Configuration
-
-Buat file `.env` di folder `backend/`:
-
-```bash
-cd backend
-cp .env.example .env
-```
-
-Edit file `.env` sesuai kebutuhan:
-```env
-# Server Configuration
-PORT=5000
-NODE_ENV=development
-
-# Database (MongoDB)
-MONGODB_URI=mongodb://localhost:27017/rapor_digital
-
-# JWT Secret
-JWT_SECRET=your_super_secret_key_change_in_production
-JWT_EXPIRE=7d
-
-# CORS
-CLIENT_URL=http://localhost:5173
-```
-
 #### Frontend Configuration
 
-Buat file `.env` di folder `frontend/`:
-
-```bash
-cd ../frontend
-cp .env.example .env
-```
-
-Edit file `.env`:
+File `.env` sudah dibuat. Pastikan isinya sesuai:
 ```env
+# API Configuration
 VITE_API_URL=http://localhost:5000/api
+
+# App Configuration
+VITE_APP_NAME=Rapor Digital
+VITE_APP_VERSION=1.0.0
 ```
+
+> **Note**: Backend menggunakan in-memory database, tidak perlu konfigurasi database.
 
 ## 🚀 Menjalankan Aplikasi
 
@@ -237,15 +229,43 @@ npm start
 1. **Frontend**: Buka browser dan akses `http://localhost:5173`
 2. **Backend API**: `http://localhost:5000/api`
 
-### Default Routes
+### Alur Penggunaan
 
-- `/` - Landing page
-- `/login` - Halaman login
-- `/dashboard` - Dashboard utama (setelah login)
-- `/students` - Manajemen data siswa
-- `/classes` - Manajemen kelas
-- `/grades` - Input nilai
-- `/reports` - Lihat & cetak rapor
+#### 1. Buat Kelas
+- Di homepage, klik tombol "**+ Tambah Kelas**"
+- Isi form dengan nama kelas (contoh: "4A") dan tingkat (contoh: 4)
+- Klik "**Simpan**"
+- Kelas akan muncul sebagai card di homepage
+
+#### 2. Tambah Siswa
+- Klik card kelas atau tombol "**Lihat Detail**" pada kelas yang ingin dikelola
+- Di halaman detail kelas, klik "**+ Tambah Siswa**"
+- Isi form dengan:
+  - **NISN**: Nomor Induk Siswa Nasional
+  - **Nama**: Nama lengkap siswa
+  - **No. Absen**: Nomor urut absen
+- Klik "**Simpan**"
+- Siswa akan muncul di tabel
+
+#### 3. Input Nilai
+- Di tabel siswa, klik tombol "**Nilai**" pada siswa yang ingin diinput nilainya
+- Modal nilai akan terbuka
+- Klik "**+ Tambah Nilai**"
+- Isi form dengan:
+  - **Mata Pelajaran**: Nama pelajaran (contoh: "Matematika")
+  - **Nilai Harian**: Nilai 0-100
+  - **UAS**: Nilai Ujian Akhir Semester 0-100
+- Klik "**Simpan**"
+- Nilai akan ditampilkan dengan total otomatis
+
+#### 4. Lihat Ranking
+- Di halaman detail kelas, klik tombol sorting "**Ranking**"
+- Siswa akan diurutkan berdasarkan rata-rata nilai (tertinggi ke terendah)
+- Ranking akan ditampilkan dengan badge nomor
+
+#### 5. Sorting Lainnya
+- **Absen**: Urutkan berdasarkan nomor absen
+- **Abjad**: Urutkan berdasarkan nama A-Z
 
 ### Test API Endpoint
 
@@ -258,7 +278,7 @@ curl http://localhost:5000/api
 Response:
 ```json
 {
-  "message": "Hello from Express API"
+  "message": "Rapor Digital API - Backend Ready"
 }
 ```
 
@@ -269,92 +289,132 @@ Response:
 http://localhost:5000/api
 ```
 
-### Endpoints (Planned)
+### Endpoints
 
-#### Authentication
+#### Kelas
 ```http
-POST   /api/auth/register    # Register user baru
-POST   /api/auth/login       # Login user
-GET    /api/auth/me          # Get current user
-POST   /api/auth/logout      # Logout user
+GET    /api/kelas           # Get all kelas with jumlah siswa
+GET    /api/kelas/:id       # Get kelas by ID with jumlah siswa
+POST   /api/kelas           # Create new kelas
+                            # Body: { nama: string, tingkat: number }
+PUT    /api/kelas/:id       # Update kelas
+                            # Body: { nama: string, tingkat: number }
+DELETE /api/kelas/:id       # Delete kelas (cascade delete siswa & nilai)
 ```
 
-#### Students
+#### Siswa
 ```http
-GET    /api/students         # Get all students
-GET    /api/students/:id     # Get student by ID
-POST   /api/students         # Create new student
-PUT    /api/students/:id     # Update student
-DELETE /api/students/:id     # Delete student
+GET    /api/siswa                    # Get all siswa
+GET    /api/siswa?kelasId=:id        # Get siswa by kelas
+GET    /api/siswa?kelasId=:id&sort=nama     # Sort by nama (A-Z)
+GET    /api/siswa?kelasId=:id&sort=absen    # Sort by nomor absen
+GET    /api/siswa?kelasId=:id&sort=ranking  # Sort by ranking (avg nilai)
+GET    /api/siswa/:id                # Get siswa by ID with nilai summary
+POST   /api/siswa                    # Create new siswa
+                                     # Body: { kelasId, nisn, nama, noAbsen }
+PUT    /api/siswa/:id                # Update siswa
+                                     # Body: { nisn, nama, noAbsen, kelasId }
+DELETE /api/siswa/:id                # Delete siswa (cascade delete nilai)
 ```
 
-#### Classes
+#### Nilai
 ```http
-GET    /api/classes          # Get all classes
-GET    /api/classes/:id      # Get class by ID
-POST   /api/classes          # Create new class
-PUT    /api/classes/:id      # Update class
-DELETE /api/classes/:id      # Delete class
+GET    /api/nilai                    # Get all nilai
+GET    /api/nilai?siswaId=:id        # Get nilai by siswa
+GET    /api/nilai/:id                # Get nilai by ID
+GET    /api/nilai/summary/:siswaId   # Get summary (jumlah & rata-rata)
+POST   /api/nilai                    # Create new nilai
+                                     # Body: { siswaId, mataPelajaran, nilaiHarian, uas }
+PUT    /api/nilai/:id                # Update nilai
+                                     # Body: { mataPelajaran, nilaiHarian, uas }
+DELETE /api/nilai/:id                # Delete nilai
 ```
 
-#### Subjects
-```http
-GET    /api/subjects         # Get all subjects
-GET    /api/subjects/:id     # Get subject by ID
-POST   /api/subjects         # Create new subject
-PUT    /api/subjects/:id     # Update subject
-DELETE /api/subjects/:id     # Delete subject
+### Response Examples
+
+#### GET /api/kelas
+```json
+[
+  {
+    "id": 1,
+    "nama": "4A",
+    "tingkat": 4,
+    "jumlahSiswa": 30,
+    "createdAt": "2025-11-28T...",
+    "updatedAt": "2025-11-28T..."
+  }
+]
 ```
 
-#### Grades
-```http
-GET    /api/grades           # Get all grades
-GET    /api/grades/:id       # Get grade by ID
-POST   /api/grades           # Input new grade
-PUT    /api/grades/:id       # Update grade
-DELETE /api/grades/:id       # Delete grade
-GET    /api/grades/student/:studentId  # Get grades by student
+#### GET /api/siswa?kelasId=1&sort=ranking
+```json
+[
+  {
+    "id": 1,
+    "kelasId": 1,
+    "nisn": "1234567890",
+    "nama": "Ahmad Zaki",
+    "noAbsen": 1,
+    "totalNilai": 850.5,
+    "rataRata": 85.05,
+    "jumlahNilai": 10,
+    "ranking": 1
+  }
+]
 ```
 
-#### Reports
-```http
-GET    /api/reports/:studentId/:semester  # Get student report
-GET    /api/reports/class/:classId        # Get class reports
-POST   /api/reports/generate               # Generate report PDF
-```
-
-### Authentication
-
-Semua endpoint (kecuali `/auth/login` dan `/auth/register`) memerlukan JWT token:
-
-```http
-Authorization: Bearer <your_jwt_token>
+#### GET /api/nilai/summary/1
+```json
+{
+  "jumlah": 850.5,
+  "rataRata": 85.05,
+  "details": [
+    {
+      "mataPelajaran": "Matematika",
+      "nilaiHarian": 85,
+      "uas": 90,
+      "total": 175
+    }
+  ]
+}
 ```
 
 ## 🗺️ Roadmap
 
-### Phase 1: Foundation ✅ (Current)
+### Phase 1: Core Features ✅ (Completed)
 - [x] Setup project structure
-- [x] Basic Express backend
-- [x] Basic React frontend
-- [x] npm workspaces configuration
+- [x] Basic Express backend with in-memory database
+- [x] Basic React frontend with Tailwind CSS
+- [x] CRUD Kelas
+- [x] CRUD Siswa
+- [x] CRUD Nilai dengan kolom harian dan UAS
+- [x] Perhitungan jumlah dan rata-rata nilai
+- [x] Sorting: Absen, Abjad, Ranking
+- [x] Ranking calculation di backend
+- [x] UI dengan card untuk kelas
+- [x] UI dengan table untuk siswa
+- [x] Modal untuk manajemen nilai
 
-### Phase 2: Core Features 🔄 (In Progress)
-- [ ] MongoDB integration
+### Phase 2: Database & Persistence 🔜 (Next)
+- [ ] Migrasi ke PostgreSQL/MongoDB
+- [ ] Setup Prisma/Mongoose ORM
+- [ ] Data persistence
+- [ ] Database migration scripts
+
+### Phase 3: Authentication & Authorization 📋
 - [ ] User authentication (JWT)
-- [ ] CRUD operations untuk semua entities
-- [ ] Role-based access control
-- [ ] Responsive UI dengan Tailwind CSS
+- [ ] Role-based access (Guru, Siswa, Admin)
+- [ ] Login/Register pages
+- [ ] Protected routes
 
-### Phase 3: Advanced Features 🔜
+### Phase 4: Advanced Features 💡
 - [ ] Upload foto siswa
 - [ ] Generate PDF rapor
-- [ ] Dashboard analytics dengan charts
 - [ ] Export data ke Excel
-- [ ] Email notifications
-- [ ] Search & filter data
+- [ ] Dashboard analytics dengan charts
+- [ ] Search & filter advanced
 
-### Phase 4: Optimization & Scale 📋
+### Phase 5: Optimization & Scale ⚡
 - [ ] Unit & integration tests
 - [ ] Performance optimization
 - [ ] Caching implementation
@@ -362,13 +422,12 @@ Authorization: Bearer <your_jwt_token>
 - [ ] CI/CD pipeline
 - [ ] Production deployment
 
-### Future Enhancements 💡
+### Future Enhancements 🚀
 - [ ] Mobile app (React Native)
 - [ ] Attendance system
-- [ ] Payment management (SPP)
 - [ ] Parent-teacher messaging
 - [ ] Real-time notifications
-- [ ] Multi-school support
+- [ ] Multi-semester support
 
 ## 🛠️ Development
 
@@ -469,7 +528,7 @@ This project is licensed under the **ISC License**.
 
 Jika ada pertanyaan atau butuh bantuan:
 - Create an issue di GitHub
-- Email: [your-email@example.com]
+- Email: [kelempat@gmail.com]
 
 ---
 
