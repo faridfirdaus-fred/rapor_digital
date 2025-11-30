@@ -1,62 +1,58 @@
-import { ObjectId } from 'mongodb';
+import prisma from '../config/database.js';
 
 export class Kelas {
-  static getCollection() {
-    return global.db.collection('kelas');
-  }
-
   static async create(data) {
-    const kelas = {
-      nama: data.nama,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    const result = await this.getCollection().insertOne(kelas);
-    return { _id: result.insertedId, ...kelas };
+    return await prisma.kelas.create({
+      data: {
+        nama: data.nama
+      }
+    });
   }
 
   static async findAll() {
-    return await this.getCollection().find({}).toArray();
+    return await prisma.kelas.findMany({
+      include: {
+        _count: {
+          select: { siswa: true }
+        }
+      }
+    });
   }
 
   static async findById(id) {
-    return await this.getCollection().findOne({ _id: new ObjectId(id) });
+    return await prisma.kelas.findUnique({
+      where: { id },
+      include: {
+        siswa: true,
+        bobotNilai: true
+      }
+    });
   }
 
   static async update(id, data) {
-    const result = await this.getCollection().findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { 
-        $set: { 
-          ...data,
-          updatedAt: new Date()
-        }
-      },
-      { returnDocument: 'after' }
-    );
-    return result;
+    return await prisma.kelas.update({
+      where: { id },
+      data: {
+        nama: data.nama
+      }
+    });
   }
 
   static async delete(id) {
-    const result = await this.getCollection().deleteOne({ _id: new ObjectId(id) });
-    
-    if (result.deletedCount > 0) {
-      // Delete related siswa and nilai
-      const siswaCollection = global.db.collection('siswa');
-      const nilaiCollection = global.db.collection('nilai');
-      
-      const siswaList = await siswaCollection.find({ kelasId: id }).toArray();
-      const siswaIds = siswaList.map(s => s._id.toString());
-      
-      await siswaCollection.deleteMany({ kelasId: id });
-      await nilaiCollection.deleteMany({ siswaId: { $in: siswaIds } });
+    try {
+      // Prisma will handle cascade delete automatically
+      await prisma.kelas.delete({
+        where: { id }
+      });
+      return true;
+    } catch (error) {
+      return false;
     }
-    
-    return result.deletedCount > 0;
   }
 
   static async countSiswa(kelasId) {
-    const count = await global.db.collection('siswa').countDocuments({ kelasId });
-    return count;
+    return await prisma.siswa.count({
+      where: { kelasId }
+    });
   }
 }

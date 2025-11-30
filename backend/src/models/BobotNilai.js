@@ -1,42 +1,36 @@
-import { ObjectId } from 'mongodb';
+import prisma from '../config/database.js';
 
 export class BobotNilai {
-  static getCollection() {
-    return global.db.collection('bobotnilai');
-  }
-
   static async createOrUpdate(kelasId, data) {
     // Check if bobot already exists for this kelas
-    const existing = await this.getCollection().findOne({ kelasId });
+    const existing = await prisma.bobotNilai.findUnique({
+      where: { kelasId }
+    });
     
     if (existing) {
-      const result = await this.getCollection().findOneAndUpdate(
-        { kelasId },
-        { 
-          $set: { 
-            bobotHarian: data.bobotHarian,
-            bobotUas: data.bobotUas,
-            updatedAt: new Date()
-          }
-        },
-        { returnDocument: 'after' }
-      );
-      return result;
+      return await prisma.bobotNilai.update({
+        where: { kelasId },
+        data: {
+          bobotHarian: data.bobotHarian,
+          bobotUas: data.bobotUas
+        }
+      });
     } else {
-      const bobot = {
-        kelasId,
-        bobotHarian: data.bobotHarian,
-        bobotUas: data.bobotUas,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      const result = await this.getCollection().insertOne(bobot);
-      return { _id: result.insertedId, ...bobot };
+      return await prisma.bobotNilai.create({
+        data: {
+          kelasId,
+          bobotHarian: data.bobotHarian,
+          bobotUas: data.bobotUas
+        }
+      });
     }
   }
 
   static async findByKelas(kelasId) {
-    const bobot = await this.getCollection().findOne({ kelasId });
+    const bobot = await prisma.bobotNilai.findUnique({
+      where: { kelasId }
+    });
+    
     if (!bobot) {
       // Return default bobot if not found
       return {
@@ -45,11 +39,18 @@ export class BobotNilai {
         bobotUas: 60
       };
     }
+    
     return bobot;
   }
 
   static async delete(kelasId) {
-    const result = await this.getCollection().deleteOne({ kelasId });
-    return result.deletedCount > 0;
+    try {
+      await prisma.bobotNilai.delete({
+        where: { kelasId }
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }

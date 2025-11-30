@@ -1,13 +1,24 @@
-import mongoose from 'mongoose';
+import { PrismaClient } from '@prisma/client';
 
+// Create a single Prisma Client instance
+const prisma = new PrismaClient({
+  log: ['query', 'info', 'warn', 'error']
+});
+
+// Connect to database
 export const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      dbName: 'rapordigital'
-    });
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    await prisma.$connect();
+    console.log('✅ Prisma connected to MongoDB');
   } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
+    console.error('❌ Prisma connection error:', error);
     process.exit(1);
   }
 };
+
+// Disconnect on app termination
+export const disconnectDB = async () => {
+  await prisma.$disconnect();
+};
+
+export default prisma;

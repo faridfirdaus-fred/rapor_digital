@@ -17,3 +17,5 @@ pids
 
 # compiled files
 dist/
+
+/src/generated/prisma

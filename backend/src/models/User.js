@@ -1,35 +1,37 @@
-import { ObjectId } from 'mongodb';
+import prisma from '../config/database.js';
 import bcrypt from 'bcryptjs';
 
 export class User {
-  static getCollection() {
-    return global.db.collection('users');
-  }
-
   static async create(data) {
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    const user = {
-      email: data.email,
-      password: hashedPassword,
-      name: data.name || data.email.split('@')[0],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    const result = await this.getCollection().insertOne(user);
-    return { _id: result.insertedId, ...user };
+    const user = await prisma.user.create({
+      data: {
+        email: data.email,
+        password: hashedPassword,
+        name: data.name || data.email.split('@')[0]
+      }
+    });
+    return user;
   }
 
   static async findAll() {
-    return await this.getCollection().find({}).toArray();
+    return await prisma.user.findMany();
   }
 
   static async findById(id) {
-    return await this.getCollection().findOne({ _id: new ObjectId(id) });
+    return await prisma.user.findUnique({
+      where: { id }
+    });
   }
 
   static async findByEmail(email) {
-    return await this.getCollection().findOne({ 
-      email: { $regex: new RegExp(`^${email}$`, 'i') }
+    return await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: 'insensitive'
+        }
+      }
     });
   }
 
@@ -39,36 +41,28 @@ export class User {
 
   static async updatePassword(userId, newPassword) {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    const result = await this.getCollection().findOneAndUpdate(
-      { _id: new ObjectId(userId) },
-      { 
-        $set: { 
-          password: hashedPassword,
-          updatedAt: new Date()
-        }
-      },
-      { returnDocument: 'after' }
-    );
-    return result;
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
   }
 
   static async update(id, data) {
-    const result = await this.getCollection().findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { 
-        $set: { 
-          ...data,
-          updatedAt: new Date()
-        }
-      },
-      { returnDocument: 'after' }
-    );
-    return result;
+    return await prisma.user.update({
+      where: { id },
+      data
+    });
   }
 
   static async delete(id) {
-    const result = await this.getCollection().deleteOne({ _id: new ObjectId(id) });
-    return result.deletedCount > 0;
+    try {
+      await prisma.user.delete({
+        where: { id }
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   static sanitize(user) {
@@ -79,27 +73,25 @@ export class User {
 }
 
 export class ResetToken {
-  static getCollection() {
-    return global.db.collection('resetTokens');
-  }
-
   static async create(userId, token) {
-    const resetToken = {
-      userId,
-      token,
-      expiresAt: new Date(Date.now() + 3600000),
-      createdAt: new Date()
-    };
-    const result = await this.getCollection().insertOne(resetToken);
-    return { _id: result.insertedId, ...resetToken };
+    return await prisma.resetToken.create({
+      data: {
+        userId,
+        token,
+        expiresAt: new Date(Date.now() + 3600000) // 1 hour
+      }
+    });
   }
 
   static async findByToken(token) {
-    const resetToken = await this.getCollection().findOne({ token });
+    const resetToken = await prisma.resetToken.findUnique({
+      where: { token }
+    });
+    
     if (!resetToken) return null;
     
     if (new Date() > resetToken.expiresAt) {
-      await this.delete(resetToken._id);
+      await this.delete(resetToken.id);
       return null;
     }
     
@@ -107,11 +99,19 @@ export class ResetToken {
   }
 
   static async delete(id) {
-    const result = await this.getCollection().deleteOne({ _id: new ObjectId(id) });
-    return result.deletedCount > 0;
+    try {
+      await prisma.resetToken.delete({
+        where: { id }
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   static async deleteByUserId(userId) {
-    await this.getCollection().deleteMany({ userId });
+    await prisma.resetToken.deleteMany({
+      where: { userId }
+    });
   }
 }

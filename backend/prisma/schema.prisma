@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_URI")
+}
+
+// User model - for authentication
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ResetToken model - for password reset
+model ResetToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("resetTokens")
+}
+
+// Kelas model - for class management
+model Kelas {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  nama      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  siswa     Siswa[]
+  nilai     Nilai[]
+  bobotNilai BobotNilai?
+
+  @@map("kelas")
+}
+
+// Siswa model - for student data
+model Siswa {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  kelasId   String   @db.ObjectId
+  nisn      String
+  nama      String
+  noAbsen   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  kelas     Kelas    @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+  nilai     Nilai[]
+
+  @@map("siswa")
+}
+
+// Nilai model - for student grades
+model Nilai {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  siswaId       String   @db.ObjectId
+  kelasId       String   @db.ObjectId
+  mataPelajaran String
+  nilaiHarian   Float[]
+  uas           Float    @default(0)
+  bobotHarian   Float    @default(40)
+  bobotUas      Float    @default(60)
+  nilaiAkhir    Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  siswa         Siswa    @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  kelas         Kelas    @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+
+  @@map("nilai")
+}
+
+// BobotNilai model - for grade weight configuration per class
+model BobotNilai {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  kelasId     String   @unique @db.ObjectId
+  bobotHarian Float    @default(40)
+  bobotUas    Float    @default(60)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  kelas       Kelas    @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+
+  @@map("bobotnilai")
+}

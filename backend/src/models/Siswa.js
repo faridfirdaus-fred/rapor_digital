@@ -1,63 +1,74 @@
-import { ObjectId } from 'mongodb';
+import prisma from '../config/database.js';
 
 export class Siswa {
-  static getCollection() {
-    return global.db.collection('siswa');
-  }
-
   static async create(data) {
-    const siswa = {
-      kelasId: data.kelasId,
-      nisn: data.nisn,
-      nama: data.nama,
-      noAbsen: data.noAbsen,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    const result = await this.getCollection().insertOne(siswa);
-    return { _id: result.insertedId, ...siswa };
+    return await prisma.siswa.create({
+      data: {
+        kelasId: data.kelasId,
+        nisn: data.nisn,
+        nama: data.nama,
+        noAbsen: data.noAbsen
+      }
+    });
   }
 
   static async findAll(kelasId = null) {
-    const filter = kelasId ? { kelasId } : {};
-    return await this.getCollection().find(filter).toArray();
+    const where = kelasId ? { kelasId } : {};
+    return await prisma.siswa.findMany({
+      where,
+      include: {
+        kelas: true
+      }
+    });
   }
 
   static async findById(id) {
-    return await this.getCollection().findOne({ _id: new ObjectId(id) });
+    return await prisma.siswa.findUnique({
+      where: { id },
+      include: {
+        kelas: true,
+        nilai: true
+      }
+    });
   }
 
   static async findByKelas(kelasId) {
-    return await this.getCollection().find({ kelasId }).toArray();
+    return await prisma.siswa.findMany({
+      where: { kelasId },
+      include: {
+        nilai: true
+      }
+    });
   }
 
   static async update(id, data) {
-    const result = await this.getCollection().findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { 
-        $set: { 
-          ...data,
-          updatedAt: new Date()
-        }
-      },
-      { returnDocument: 'after' }
-    );
-    return result;
+    return await prisma.siswa.update({
+      where: { id },
+      data: {
+        kelasId: data.kelasId,
+        nisn: data.nisn,
+        nama: data.nama,
+        noAbsen: data.noAbsen
+      }
+    });
   }
 
   static async delete(id) {
-    const result = await this.getCollection().deleteOne({ _id: new ObjectId(id) });
-    
-    if (result.deletedCount > 0) {
-      // Delete related nilai
-      await global.db.collection('nilai').deleteMany({ siswaId: id });
+    try {
+      // Prisma will handle cascade delete automatically
+      await prisma.siswa.delete({
+        where: { id }
+      });
+      return true;
+    } catch (error) {
+      return false;
     }
-    
-    return result.deletedCount > 0;
   }
 
   static async getNilaiSummary(siswaId) {
-    const nilaiList = await global.db.collection('nilai').find({ siswaId }).toArray();
+    const nilaiList = await prisma.nilai.findMany({
+      where: { siswaId }
+    });
     
     if (nilaiList.length === 0) {
       return {

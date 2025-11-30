@@ -1,31 +1,6 @@
-import { ObjectId } from 'mongodb';
+import prisma from '../config/database.js';
 
 export class Nilai {
-  static getCollection() {
-    return global.db.collection('nilai');
-  }
-
-  static async create(data) {
-    const nilai = {
-      siswaId: data.siswaId,
-      kelasId: data.kelasId,
-      mataPelajaran: data.mataPelajaran,
-      nilaiHarian: data.nilaiHarian || [],
-      uas: data.uas || 0,
-      bobotHarian: data.bobotHarian || 40,
-      bobotUas: data.bobotUas || 60,
-      nilaiAkhir: 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    // Calculate nilai akhir
-    nilai.nilaiAkhir = this.calculateNilaiAkhir(nilai.nilaiHarian, nilai.uas, nilai.bobotHarian, nilai.bobotUas);
-    
-    const result = await this.getCollection().insertOne(nilai);
-    return { _id: result.insertedId, ...nilai };
-  }
-
   static calculateNilaiAkhir(nilaiHarian, uas, bobotHarian, bobotUas) {
     if (!nilaiHarian || nilaiHarian.length === 0) {
       return (uas * bobotUas) / 100;
@@ -35,55 +10,95 @@ export class Nilai {
     return ((avgHarian * bobotHarian) + (uas * bobotUas)) / 100;
   }
 
+  static async create(data) {
+    const nilaiAkhir = this.calculateNilaiAkhir(
+      data.nilaiHarian || [],
+      data.uas || 0,
+      data.bobotHarian || 40,
+      data.bobotUas || 60
+    );
+
+    return await prisma.nilai.create({
+      data: {
+        siswaId: data.siswaId,
+        kelasId: data.kelasId,
+        mataPelajaran: data.mataPelajaran,
+        nilaiHarian: data.nilaiHarian || [],
+        uas: data.uas || 0,
+        bobotHarian: data.bobotHarian || 40,
+        bobotUas: data.bobotUas || 60,
+        nilaiAkhir
+      }
+    });
+  }
+
   static async findAll(siswaId = null) {
-    const filter = siswaId ? { siswaId } : {};
-    return await this.getCollection().find(filter).toArray();
+    const where = siswaId ? { siswaId } : {};
+    return await prisma.nilai.findMany({
+      where,
+      include: {
+        siswa: true,
+        kelas: true
+      }
+    });
   }
 
   static async findById(id) {
-    return await this.getCollection().findOne({ _id: new ObjectId(id) });
+    return await prisma.nilai.findUnique({
+      where: { id },
+      include: {
+        siswa: true,
+        kelas: true
+      }
+    });
   }
 
   static async findBySiswa(siswaId) {
-    return await this.getCollection().find({ siswaId }).toArray();
+    return await prisma.nilai.findMany({
+      where: { siswaId }
+    });
   }
 
   static async findByKelas(kelasId) {
-    return await this.getCollection().find({ kelasId }).toArray();
+    return await prisma.nilai.findMany({
+      where: { kelasId },
+      include: {
+        siswa: true
+      }
+    });
   }
 
   static async update(id, data) {
-    const updateData = {
-      ...data,
-      updatedAt: new Date()
-    };
+    const current = await this.findById(id);
     
-    // Recalculate nilai akhir if components changed
-    if (data.nilaiHarian !== undefined || data.uas !== undefined || data.bobotHarian !== undefined || data.bobotUas !== undefined) {
-      const current = await this.findById(id);
-      const nilaiHarian = data.nilaiHarian !== undefined ? data.nilaiHarian : current.nilaiHarian;
-      const uas = data.uas !== undefined ? data.uas : current.uas;
-      const bobotHarian = data.bobotHarian !== undefined ? data.bobotHarian : current.bobotHarian;
-      const bobotUas = data.bobotUas !== undefined ? data.bobotUas : current.bobotUas;
-      
-      updateData.nilaiAkhir = this.calculateNilaiAkhir(nilaiHarian, uas, bobotHarian, bobotUas);
-    }
+    const nilaiHarian = data.nilaiHarian !== undefined ? data.nilaiHarian : current.nilaiHarian;
+    const uas = data.uas !== undefined ? data.uas : current.uas;
+    const bobotHarian = data.bobotHarian !== undefined ? data.bobotHarian : current.bobotHarian;
+    const bobotUas = data.bobotUas !== undefined ? data.bobotUas : current.bobotUas;
     
-    const result = await this.getCollection().findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { $set: updateData },
-      { returnDocument: 'after' }
-    );
-    return result;
+    const nilaiAkhir = this.calculateNilaiAkhir(nilaiHarian, uas, bobotHarian, bobotUas);
+
+    return await prisma.nilai.update({
+      where: { id },
+      data: {
+        ...data,
+        nilaiAkhir
+      }
+    });
   }
 
   static async delete(id) {
-    const result = await this.getCollection().deleteOne({ _id: new ObjectId(id) });
-    return result.deletedCount > 0;
+    try {
+      await prisma.nilai.delete({
+        where: { id }
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   static async getSiswaRanking(kelasId) {
-    // Get all nilai for the kelas
     const nilaiList = await this.findByKelas(kelasId);
     
     // Group by siswaId and calculate average
