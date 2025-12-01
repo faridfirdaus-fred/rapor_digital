@@ -34,11 +34,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Create user
-    const result = await User.create({ email, password, name });
-    const user = {
-      ...result,
-      id: result._id.toString()
-    };
+    const user = await User.create({ email, password, name });
 
     // Generate token
     const token = generateToken(user.id);
@@ -70,15 +66,10 @@ router.post('/login', async (req, res) => {
     }
 
     // Find user
-    const result = await User.findByEmail(email);
-    if (!result) {
+    const user = await User.findByEmail(email);
+    if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
-
-    const user = {
-      ...result,
-      id: result._id.toString()
-    };
 
     // Validate password
     const isValidPassword = await User.validatePassword(password, user.password);
@@ -110,18 +101,13 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     // Find user
-    const result = await User.findByEmail(email);
-    if (!result) {
+    const user = await User.findByEmail(email);
+    if (!user) {
       // Don't reveal if user exists or not
       return res.json({ 
         message: 'If the email exists, a reset link has been sent' 
       });
     }
-
-    const user = {
-      ...result,
-      id: result._id.toString()
-    };
 
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
