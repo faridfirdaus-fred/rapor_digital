@@ -7,13 +7,10 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const kelasList = await Kelas.findAll();
-    const kelasWithCount = await Promise.all(
-      kelasList.map(async (kelas) => ({
-        ...kelas,
-        id: kelas._id.toString(),
-        jumlahSiswa: await Kelas.countSiswa(kelas._id.toString())
-      }))
-    );
+    const kelasWithCount = kelasList.map((kelas) => ({
+      ...kelas,
+      jumlahSiswa: kelas._count?.siswa || 0
+    }));
     res.json(kelasWithCount);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -27,11 +24,7 @@ router.get('/:id', async (req, res) => {
     if (!kelas) {
       return res.status(404).json({ error: 'Kelas tidak ditemukan' });
     }
-    res.json({
-      ...kelas,
-      id: kelas._id.toString(),
-      jumlahSiswa: await Kelas.countSiswa(kelas._id.toString())
-    });
+    res.json(kelas);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -47,10 +40,7 @@ router.post('/', async (req, res) => {
     }
 
     const kelas = await Kelas.create({ nama });
-    res.status(201).json({
-      ...kelas,
-      id: kelas._id.toString()
-    });
+    res.status(201).json(kelas);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -66,10 +56,7 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Kelas tidak ditemukan' });
     }
 
-    res.json({
-      ...kelas,
-      id: kelas._id.toString()
-    });
+    res.json(kelas);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

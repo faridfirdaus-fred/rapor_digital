@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
   try {
     const { siswaId } = req.query;
     const nilaiList = await Nilai.findAll(siswaId);
-    res.json(nilaiList.map(n => ({ ...n, id: n._id.toString() })));
+    res.json(nilaiList);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -23,7 +23,7 @@ router.get('/:id', async (req, res) => {
     if (!nilai) {
       return res.status(404).json({ error: 'Nilai tidak ditemukan' });
     }
-    res.json({ ...nilai, id: nilai._id.toString() });
+    res.json(nilai);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -93,10 +93,7 @@ router.post('/', async (req, res) => {
       bobotUas: bobotUas !== undefined ? parseInt(bobotUas) : bobotNilai.bobotUas
     });
     
-    res.status(201).json({
-      ...result,
-      id: result._id.toString()
-    });
+    res.status(201).json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -128,10 +125,7 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Nilai tidak ditemukan' });
     }
 
-    res.json({
-      ...result,
-      id: result._id.toString()
-    });
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -14,12 +14,11 @@ router.get('/', async (req, res) => {
     const { kelasId, sort } = req.query;
     let siswaList = await Siswa.findAll(kelasId);
 
-    // Add nilai summary for each siswa and convert _id to id
+    // Add nilai summary for each siswa
     siswaList = await Promise.all(siswaList.map(async (siswa) => {
-      const nilaiSummary = await Siswa.getNilaiSummary(siswa._id.toString());
+      const nilaiSummary = await Siswa.getNilaiSummary(siswa.id);
       return {
         ...siswa,
-        id: siswa._id.toString(),
         ...nilaiSummary
       };
     }));
@@ -63,15 +62,13 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Siswa tidak ditemukan' });
     }
 
-    const siswaId = siswa._id.toString();
-    const nilaiSummary = await Siswa.getNilaiSummary(siswaId);
-    const nilaiList = await Nilai.findBySiswa(siswaId);
+    const nilaiSummary = await Siswa.getNilaiSummary(siswa.id);
+    const nilaiList = await Nilai.findBySiswa(siswa.id);
 
     res.json({
       ...siswa,
-      id: siswaId,
       ...nilaiSummary,
-      nilaiList: nilaiList.map(n => ({ ...n, id: n._id.toString() }))
+      nilaiList
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -96,10 +93,7 @@ router.post('/', async (req, res) => {
     }
 
     const result = await Siswa.create({ kelasId, nisn, nama, noAbsen });
-    res.status(201).json({
-      ...result,
-      id: result._id.toString()
-    });
+    res.status(201).json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -115,10 +109,7 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Siswa tidak ditemukan' });
     }
 
-    res.json({
-      ...result,
-      id: result._id.toString()
-    });
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -215,7 +206,7 @@ router.post('/import', upload.single('file'), async (req, res) => {
 
     // Update noAbsen based on alphabetical order
     await Promise.all(results.map((siswa, index) => 
-      Siswa.update(siswa._id.toString(), { noAbsen: index + 1 })
+      Siswa.update(siswa.id, { noAbsen: index + 1 })
     ));
 
     res.json({

@@ -8,10 +8,7 @@ const router = express.Router();
 router.get('/:kelasId', async (req, res) => {
   try {
     const bobot = await BobotNilai.findByKelas(req.params.kelasId);
-    res.json({
-      ...bobot,
-      id: bobot._id?.toString()
-    });
+    res.json(bobot);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -39,7 +36,7 @@ router.post('/:kelasId', async (req, res) => {
     const nilaiList = await Nilai.findByKelas(req.params.kelasId);
     await Promise.all(
       nilaiList.map(nilai => 
-        Nilai.update(nilai._id.toString(), {
+        Nilai.update(nilai.id, {
           bobotHarian: parseInt(bobotHarian),
           bobotUas: parseInt(bobotUas)
         })
@@ -48,7 +45,6 @@ router.post('/:kelasId', async (req, res) => {
 
     res.json({
       ...result,
-      id: result._id?.toString(),
       message: 'Bobot nilai berhasil diperbarui'
     });
   } catch (error) {
