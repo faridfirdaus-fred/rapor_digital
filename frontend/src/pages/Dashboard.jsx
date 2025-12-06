@@ -14,7 +14,7 @@ const Sidebar = () => {
       <ul className="space-y-4">
         <li>
           <button
-            className={`block w-full text-left px-3 py-2 rounded-lg font-medium transition`}
+            className={`block w-full text-left px-3 py-2 rounded-lg font-medium transition hover:bg-green-100 hover:text-green-700 hover:shadow-md hover:scale-105 transform`}
             onClick={() => navigate("/dashboard/profil")}
           >
             Profil Guru
@@ -22,7 +22,7 @@ const Sidebar = () => {
         </li>
         <li>
           <button
-            className={`block w-full text-left px-3 py-2 rounded-lg font-medium transition`}
+            className={`block w-full text-left px-3 py-2 rounded-lg font-medium transition hover:bg-green-100 hover:text-green-700 hover:shadow-md hover:scale-105 transform`}
             onClick={() => navigate("/dashboard/perankingan")}
           >
             Perankingan
@@ -30,7 +30,7 @@ const Sidebar = () => {
         </li>
         <li>
           <button
-            className={`block w-full text-left px-3 py-2 rounded-lg font-medium transition`}
+            className={`block w-full text-left px-3 py-2 rounded-lg font-medium transition hover:bg-green-100 hover:text-green-700 hover:shadow-md hover:scale-105 transform`}
             onClick={() => navigate("/dashboard/daftar-mapel")}
           >
             Daftar Mata Pelajaran
@@ -38,7 +38,7 @@ const Sidebar = () => {
         </li>
         <li>
           <button
-            className={`block w-full text-left px-3 py-2 rounded-lg font-medium transition`}
+            className={`block w-full text-left px-3 py-2 rounded-lg font-medium transition hover:bg-green-100 hover:text-green-700 hover:shadow-md hover:scale-105 transform`}
             onClick={() => navigate("/dashboard/bobot-nilai")}
           >
             Pengaturan Bobot Nilai
