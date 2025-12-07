@@ -100,6 +100,23 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ error: 'Kelas tidak ditemukan' });
     }
 
+    // Check for duplicate NISN in the same kelas
+    const existingSiswaByNISN = await Siswa.findAll(kelasId);
+    const isDuplicateNISN = existingSiswaByNISN.some(s => s.nisn === nisn);
+    if (isDuplicateNISN) {
+      return res.status(400).json({ 
+        error: `NISN ${nisn} sudah digunakan oleh siswa lain di kelas ini` 
+      });
+    }
+
+    // Check for duplicate noAbsen in the same kelas
+    const isDuplicateAbsen = existingSiswaByNISN.some(s => s.noAbsen === parseInt(noAbsen));
+    if (isDuplicateAbsen) {
+      return res.status(400).json({ 
+        error: `Nomor absen ${noAbsen} sudah digunakan oleh siswa lain di kelas ini` 
+      });
+    }
+
     // Create siswa
     const siswa = await Siswa.create({ kelasId, nisn, nama, noAbsen });
     res.status(201).json(siswa);
