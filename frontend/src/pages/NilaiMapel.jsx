@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../contexts/useAuth";
 import { API_URL } from "../services/api";
+import * as XLSX from "xlsx";
+import CustomAlert from "../components/CustomAlert";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const getRataRata = (nilaiHarian, uas, bobotHarian, bobotUas) => {
   const harianValid = nilaiHarian.filter(
@@ -38,6 +41,18 @@ const NilaiMapel = () => {
   });
   const [showAddSiswaModal, setShowAddSiswaModal] = useState(false);
   const [newSiswa, setNewSiswa] = useState({ nisn: "", nama: "", noAbsen: "" });
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    type: "info",
+    title: "",
+    message: "",
+  });
+  const [confirm, setConfirm] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   // Fetch siswa dan nilai
   useEffect(() => {
@@ -105,7 +120,12 @@ const NilaiMapel = () => {
         setSiswaList(siswaWithNilai);
       } catch (error) {
         console.error("Error fetching data:", error);
-        alert("Gagal memuat data siswa dan nilai");
+        setAlert({
+          isOpen: true,
+          type: "error",
+          title: "Gagal Memuat Data",
+          message: "Gagal memuat data siswa dan nilai",
+        });
       } finally {
         setLoading(false);
       }
@@ -188,15 +208,24 @@ const NilaiMapel = () => {
         }
       }
 
-      alert("Data nilai berhasil disimpan!");
-      // Reload data
-      window.location.reload();
+      setAlert({
+        isOpen: true,
+        type: "success",
+        title: "Berhasil!",
+        message: "Data nilai berhasil disimpan!",
+      });
+      // Reload data setelah 1.5 detik
+      setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
       console.error("Error saving nilai:", error);
-      alert(
-        "Gagal menyimpan nilai: " +
-          (error.response?.data?.error || error.message)
-      );
+      setAlert({
+        isOpen: true,
+        type: "error",
+        title: "Gagal Menyimpan",
+        message: `Gagal menyimpan nilai: ${
+          error.response?.data?.error || error.message
+        }`,
+      });
     } finally {
       setSaving(false);
     }
@@ -206,7 +235,12 @@ const NilaiMapel = () => {
   const handleAddSiswa = async () => {
     try {
       if (!newSiswa.nisn || !newSiswa.nama || !newSiswa.noAbsen) {
-        alert("Semua field harus diisi!");
+        setAlert({
+          isOpen: true,
+          type: "warning",
+          title: "Peringatan",
+          message: "Semua field harus diisi!",
+        });
         return;
       }
 
@@ -236,16 +270,60 @@ const NilaiMapel = () => {
       );
       setShowAddSiswaModal(false);
       setNewSiswa({ nisn: "", nama: "", noAbsen: "" });
-      alert(
-        "Siswa berhasil ditambahkan! Siswa akan tersedia di semua mata pelajaran kelas ini."
-      );
+      setAlert({
+        isOpen: true,
+        type: "success",
+        title: "Berhasil!",
+        message:
+          "Siswa berhasil ditambahkan! Siswa akan tersedia di semua mata pelajaran kelas ini.",
+      });
     } catch (error) {
       console.error("Error adding siswa:", error);
-      alert(
-        "Gagal menambahkan siswa: " +
-          (error.response?.data?.error || error.message)
-      );
+      setAlert({
+        isOpen: true,
+        type: "error",
+        title: "Gagal Menambahkan",
+        message: `Gagal menambahkan siswa: ${
+          error.response?.data?.error || error.message
+        }`,
+      });
     }
+  };
+
+  // Export to Excel
+  const exportToExcel = () => {
+    const dataToExport = siswaList.map((siswa) => {
+      const rowData = {
+        "No Absen": siswa.absen,
+        NISN: siswa.nisn,
+        Nama: siswa.nama,
+      };
+
+      // Add nilai harian columns
+      siswa.harian.forEach((nilai, index) => {
+        rowData[`Harian ${index + 1}`] = nilai ?? "-";
+      });
+
+      rowData["UAS"] = siswa.uas ?? "-";
+      rowData["Nilai Akhir"] = getRataRata(
+        siswa.harian,
+        siswa.uas,
+        bobotNilai.bobotHarian,
+        bobotNilai.bobotUas
+      );
+
+      return rowData;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, mapel);
+    XLSX.writeFile(
+      wb,
+      `Nilai_${mapel}_${namaKelas}_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`
+    );
   };
 
   if (loading) {
@@ -307,8 +385,27 @@ const NilaiMapel = () => {
         </div>
       </div>
 
-      {/* Tombol Tambah Siswa */}
-      <div className="mb-4 flex justify-end">
+      {/* Tombol Tambah Siswa dan Export */}
+      <div className="mb-4 flex justify-end gap-3">
+        <button
+          onClick={exportToExcel}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          Export Excel
+        </button>
         <button
           onClick={() => setShowAddSiswaModal(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
@@ -574,6 +671,24 @@ const NilaiMapel = () => {
           </div>
         </div>
       )}
+
+      {/* Custom Alert */}
+      <CustomAlert
+        isOpen={alert.isOpen}
+        onClose={() => setAlert({ ...alert, isOpen: false })}
+        type={alert.type}
+        title={alert.title}
+        message={alert.message}
+      />
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirm.isOpen}
+        onClose={() => setConfirm({ ...confirm, isOpen: false })}
+        onConfirm={confirm.onConfirm}
+        title={confirm.title}
+        message={confirm.message}
+      />
     </div>
   );
 };

@@ -1,18 +1,35 @@
 import React, { useState } from "react";
+import CustomAlert from "../components/CustomAlert";
 
 const BobotNilai = () => {
   const [bobotHarian, setBobotHarian] = useState(40);
   const [bobotUAS, setBobotUAS] = useState(60);
   const [isEditing, setIsEditing] = useState(false);
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    type: "info",
+    title: "",
+    message: "",
+  });
 
   const handleSave = () => {
     // Validasi total bobot harus 100%
     if (bobotHarian + bobotUAS !== 100) {
-      alert("Total bobot harus 100%!");
+      setAlert({
+        isOpen: true,
+        type: "warning",
+        title: "Peringatan",
+        message: "Total bobot harus 100%!",
+      });
       return;
     }
     setIsEditing(false);
-    alert("Bobot nilai berhasil disimpan!");
+    setAlert({
+      isOpen: true,
+      type: "success",
+      title: "Berhasil!",
+      message: "Bobot nilai berhasil disimpan!",
+    });
   };
 
   const handleReset = () => {
@@ -50,14 +67,21 @@ const BobotNilai = () => {
             <div className="flex items-center space-x-3">
               {isEditing ? (
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={bobotHarian}
-                  onChange={(e) =>
-                    setBobotHarian(parseInt(e.target.value) || 0)
-                  }
-                  className="w-20 px-3 py-2 border rounded-lg text-center"
-                  min="0"
-                  max="100"
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/^0+/, "") || "0";
+                    const numValue = parseInt(value);
+                    if (value === "" || (numValue >= 0 && numValue <= 100)) {
+                      setBobotHarian(value === "" ? 0 : numValue);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === "") setBobotHarian(0);
+                  }}
+                  className="w-20 px-3 py-2 border-2 border-green-500 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-green-600"
+                  maxLength="3"
                 />
               ) : (
                 <span className="text-2xl font-bold text-green-600">
@@ -86,12 +110,21 @@ const BobotNilai = () => {
             <div className="flex items-center space-x-3">
               {isEditing ? (
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={bobotUAS}
-                  onChange={(e) => setBobotUAS(parseInt(e.target.value) || 0)}
-                  className="w-20 px-3 py-2 border rounded-lg text-center"
-                  min="0"
-                  max="100"
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/^0+/, "") || "0";
+                    const numValue = parseInt(value);
+                    if (value === "" || (numValue >= 0 && numValue <= 100)) {
+                      setBobotUAS(value === "" ? 0 : numValue);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === "") setBobotUAS(0);
+                  }}
+                  className="w-20 px-3 py-2 border-2 border-green-500 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-green-600"
+                  maxLength="3"
                 />
               ) : (
                 <span className="text-2xl font-bold text-green-600">
@@ -160,6 +193,15 @@ const BobotNilai = () => {
           )}
         </div>
       </div>
+
+      {/* Custom Alert */}
+      <CustomAlert
+        isOpen={alert.isOpen}
+        onClose={() => setAlert({ ...alert, isOpen: false })}
+        type={alert.type}
+        title={alert.title}
+        message={alert.message}
+      />
     </div>
   );
 };
