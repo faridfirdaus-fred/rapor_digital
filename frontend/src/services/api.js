@@ -1,20 +1,28 @@
 // Determine API URL based on environment
 const getApiUrl = () => {
-  // If VITE_API_URL is set in .env, use it
+  // Priority 1: Use VITE_API_URL from environment variable if set
   if (import.meta.env.VITE_API_URL) {
+    console.log('Using VITE_API_URL:', import.meta.env.VITE_API_URL);
     return import.meta.env.VITE_API_URL;
   }
   
-  // Otherwise, use relative path for production or localhost for dev
+  // Priority 2: In production, detect the current domain
   if (import.meta.env.PROD) {
-    return '/api'; // Production: same domain
+    const currentDomain = window.location.origin;
+    const apiUrl = `${currentDomain}/api`;
+    console.log('Production mode - using current domain:', apiUrl);
+    return apiUrl;
   }
   
-  return 'http://localhost:5000/api'; // Development fallback
+  // Priority 3: Development fallback
+  console.log('Development mode - using localhost');
+  return 'http://localhost:5000/api';
 };
 
 const API_URL = getApiUrl();
 const BASE_URL = API_URL.replace("/api", "");
+
+console.log('API Configuration:', { API_URL, BASE_URL, mode: import.meta.env.MODE });
 
 // Export untuk digunakan di file lain
 export { API_URL, BASE_URL };
