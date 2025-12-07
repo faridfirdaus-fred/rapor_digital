@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../contexts/useAuth";
+import { API_URL } from "../services/api";
 
 // Fungsi untuk mendapatkan inisial mata pelajaran
 const getInitials = (mapel) => {
@@ -36,8 +37,8 @@ const DaftarNilaiMapel = () => {
       try {
         setLoading(true);
         setError(null);
-        
-        const response = await axios.get("http://localhost:5000/api/mata-pelajaran", {
+
+        const response = await axios.get(`${API_URL}/mata-pelajaran`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -74,8 +75,18 @@ const DaftarNilaiMapel = () => {
       <div className="p-8 min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-16 h-16 mx-auto"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
           <p className="text-gray-600">{error}</p>
@@ -130,7 +141,9 @@ const DaftarNilaiMapel = () => {
                   </span>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">{mapel.nama}</h3>
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {mapel.nama}
+                  </h3>
                   <p className="text-sm text-gray-500">{kelas?.nama}</p>
                   {mapel.jumlahNilai > 0 && (
                     <p className="text-xs text-green-600 mt-1">
@@ -143,12 +156,12 @@ const DaftarNilaiMapel = () => {
                 className="mt-auto px-4 py-2 bg-green-600 text-white rounded 
                          hover:bg-green-700 transition-colors text-sm font-medium"
                 onClick={() =>
-                  navigate("/dashboard/nilai-mapel", { 
-                    state: { 
+                  navigate("/dashboard/nilai-mapel", {
+                    state: {
                       mapel: mapel.nama,
                       kelasId: kelas.id,
-                      namaKelas: kelas.nama
-                    } 
+                      namaKelas: kelas.nama,
+                    },
                   })
                 }
               >

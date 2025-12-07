@@ -2,16 +2,20 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../contexts/useAuth";
+import { API_URL } from "../services/api";
 
 const getRataRata = (nilaiHarian, uas, bobotHarian, bobotUas) => {
-  const harianValid = nilaiHarian.filter((n) => n !== null && n !== undefined && n !== "");
+  const harianValid = nilaiHarian.filter(
+    (n) => n !== null && n !== undefined && n !== ""
+  );
   if (harianValid.length === 0 && !uas) return "0.00";
-  
-  const avgHarian = harianValid.length > 0 
-    ? harianValid.reduce((a, b) => a + Number(b), 0) / harianValid.length 
-    : 0;
-  
-  const nilaiAkhir = ((avgHarian * bobotHarian) + ((uas || 0) * bobotUas)) / 100;
+
+  const avgHarian =
+    harianValid.length > 0
+      ? harianValid.reduce((a, b) => a + Number(b), 0) / harianValid.length
+      : 0;
+
+  const nilaiAkhir = (avgHarian * bobotHarian + (uas || 0) * bobotUas) / 100;
   return nilaiAkhir.toFixed(2);
 };
 
@@ -19,7 +23,7 @@ const NilaiMapel = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { token } = useAuth();
-  
+
   const mapel = location.state?.mapel || "Matematika";
   const kelasId = location.state?.kelasId;
   const namaKelas = location.state?.namaKelas;
@@ -28,7 +32,10 @@ const NilaiMapel = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [jumlahKolomHarian, setJumlahKolomHarian] = useState(3);
-  const [bobotNilai, setBobotNilai] = useState({ bobotHarian: 40, bobotUas: 60 });
+  const [bobotNilai, setBobotNilai] = useState({
+    bobotHarian: 40,
+    bobotUas: 60,
+  });
   const [showAddSiswaModal, setShowAddSiswaModal] = useState(false);
   const [newSiswa, setNewSiswa] = useState({ nisn: "", nama: "", noAbsen: "" });
 
@@ -37,31 +44,36 @@ const NilaiMapel = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch siswa
-        const siswaResponse = await axios.get("http://localhost:5000/api/siswa", {
-          headers: { Authorization: `Bearer ${token}` }
+        const siswaResponse = await axios.get(`${API_URL}/siswa`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         // Fetch bobot nilai
-        const bobotResponse = await axios.get(`http://localhost:5000/api/bobot-nilai/${kelasId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => ({ data: { bobotHarian: 40, bobotUas: 60 } }));
+        const bobotResponse = await axios
+          .get(`${API_URL}/bobot-nilai/${kelasId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .catch(() => ({ data: { bobotHarian: 40, bobotUas: 60 } }));
 
         setBobotNilai({
           bobotHarian: bobotResponse.data.bobotHarian || 40,
-          bobotUas: bobotResponse.data.bobotUas || 60
+          bobotUas: bobotResponse.data.bobotUas || 60,
         });
 
         // Fetch nilai untuk mata pelajaran ini
-        const nilaiResponse = await axios.get(`http://localhost:5000/api/nilai?kelasId=${kelasId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const nilaiResponse = await axios.get(
+          `${API_URL}/nilai?kelasId=${kelasId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         // Map siswa dengan nilai mereka
-        const siswaWithNilai = siswaResponse.data.map(siswa => {
+        const siswaWithNilai = siswaResponse.data.map((siswa) => {
           const nilaiSiswa = nilaiResponse.data.find(
-            n => n.siswaId === siswa.id && n.mataPelajaran === mapel
+            (n) => n.siswaId === siswa.id && n.mataPelajaran === mapel
           );
 
           let harianArray = [];
@@ -84,7 +96,7 @@ const NilaiMapel = () => {
             nama: siswa.nama,
             harian: harianArray,
             uas: nilaiSiswa?.uas || null,
-            nilaiId: nilaiSiswa?.id || null
+            nilaiId: nilaiSiswa?.id || null,
           };
         });
 
@@ -135,7 +147,9 @@ const NilaiMapel = () => {
     setSiswaList((prev) => {
       const newList = [...prev];
       if (type === "harian") {
-        newList[siswaIndex].harian[kolomIndex] = nilai ? parseFloat(nilai) : null;
+        newList[siswaIndex].harian[kolomIndex] = nilai
+          ? parseFloat(nilai)
+          : null;
       } else if (type === "uas") {
         newList[siswaIndex].uas = nilai ? parseFloat(nilai) : null;
       }
@@ -149,32 +163,28 @@ const NilaiMapel = () => {
       setSaving(true);
 
       for (const siswa of siswaList) {
-        const harianValid = siswa.harian.filter(n => n !== null && n !== "");
-        
+        const harianValid = siswa.harian.filter((n) => n !== null && n !== "");
+
         const nilaiData = {
           siswaId: siswa.id,
           kelasId: kelasId,
           mataPelajaran: mapel,
-          nilaiHarian: harianValid.map(n => parseFloat(n)),
+          nilaiHarian: harianValid.map((n) => parseFloat(n)),
           uas: siswa.uas ? parseFloat(siswa.uas) : 0,
           bobotHarian: bobotNilai.bobotHarian,
-          bobotUas: bobotNilai.bobotUas
+          bobotUas: bobotNilai.bobotUas,
         };
 
         if (siswa.nilaiId) {
           // Update existing
-          await axios.put(
-            `http://localhost:5000/api/nilai/${siswa.nilaiId}`,
-            nilaiData,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
+          await axios.put(`${API_URL}/nilai/${siswa.nilaiId}`, nilaiData, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
         } else {
           // Create new
-          await axios.post(
-            "http://localhost:5000/api/nilai",
-            nilaiData,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
+          await axios.post(`${API_URL}/nilai`, nilaiData, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
         }
       }
 
@@ -183,7 +193,10 @@ const NilaiMapel = () => {
       window.location.reload();
     } catch (error) {
       console.error("Error saving nilai:", error);
-      alert("Gagal menyimpan nilai: " + (error.response?.data?.error || error.message));
+      alert(
+        "Gagal menyimpan nilai: " +
+          (error.response?.data?.error || error.message)
+      );
     } finally {
       setSaving(false);
     }
@@ -198,11 +211,11 @@ const NilaiMapel = () => {
       }
 
       const response = await axios.post(
-        "http://localhost:5000/api/siswa",
+        `${API_URL}/siswa`,
         {
           nisn: newSiswa.nisn,
           nama: newSiswa.nama,
-          noAbsen: parseInt(newSiswa.noAbsen)
+          noAbsen: parseInt(newSiswa.noAbsen),
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -215,16 +228,23 @@ const NilaiMapel = () => {
         nama: response.data.nama,
         harian: Array(jumlahKolomHarian).fill(null),
         uas: null,
-        nilaiId: null
+        nilaiId: null,
       };
 
-      setSiswaList(prev => [...prev, siswaWithNilai].sort((a, b) => a.absen - b.absen));
+      setSiswaList((prev) =>
+        [...prev, siswaWithNilai].sort((a, b) => a.absen - b.absen)
+      );
       setShowAddSiswaModal(false);
       setNewSiswa({ nisn: "", nama: "", noAbsen: "" });
-      alert("Siswa berhasil ditambahkan! Siswa akan tersedia di semua mata pelajaran kelas ini.");
+      alert(
+        "Siswa berhasil ditambahkan! Siswa akan tersedia di semua mata pelajaran kelas ini."
+      );
     } catch (error) {
       console.error("Error adding siswa:", error);
-      alert("Gagal menambahkan siswa: " + (error.response?.data?.error || error.message));
+      alert(
+        "Gagal menambahkan siswa: " +
+          (error.response?.data?.error || error.message)
+      );
     }
   };
 
@@ -253,7 +273,7 @@ const NilaiMapel = () => {
           <p className="text-sm text-gray-600">{namaKelas}</p>
         </div>
       </div>
-      
+
       {/* Kontrol Kolom */}
       <div className="mb-4 bg-white rounded-lg shadow p-4">
         <div className="flex items-center justify-between">
@@ -262,7 +282,8 @@ const NilaiMapel = () => {
               Pengaturan Kolom Nilai Harian
             </h3>
             <p className="text-sm text-gray-600">
-              Jumlah kolom: {jumlahKolomHarian} | Bobot: Harian {bobotNilai.bobotHarian}% - UAS {bobotNilai.bobotUas}%
+              Jumlah kolom: {jumlahKolomHarian} | Bobot: Harian{" "}
+              {bobotNilai.bobotHarian}% - UAS {bobotNilai.bobotUas}%
             </p>
           </div>
           <div className="flex gap-2">
@@ -292,8 +313,18 @@ const NilaiMapel = () => {
           onClick={() => setShowAddSiswaModal(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
         >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          <svg
+            className="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           Tambah Siswa
         </button>
@@ -340,30 +371,40 @@ const NilaiMapel = () => {
               <tbody>
                 {siswaList.map((siswa, siswaIndex) => (
                   <tr key={siswa.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2 text-center border">{siswa.absen}</td>
-                    <td className="px-4 py-2 text-center border">{siswa.nisn}</td>
+                    <td className="px-4 py-2 text-center border">
+                      {siswa.absen}
+                    </td>
+                    <td className="px-4 py-2 text-center border">
+                      {siswa.nisn}
+                    </td>
                     <td className="px-4 py-2 border">{siswa.nama}</td>
-                    {Array.from({ length: jumlahKolomHarian }, (_, kolomIndex) => (
-                      <td key={kolomIndex} className="px-2 py-2 text-center border">
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          value={siswa.harian[kolomIndex] ?? ""}
-                          onChange={(e) =>
-                            updateNilai(
-                              siswaIndex,
-                              "harian",
-                              kolomIndex,
-                              e.target.value
-                            )
-                          }
-                          className="w-16 px-2 py-1 border rounded text-center text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                          placeholder="-"
-                        />
-                      </td>
-                    ))}
+                    {Array.from(
+                      { length: jumlahKolomHarian },
+                      (_, kolomIndex) => (
+                        <td
+                          key={kolomIndex}
+                          className="px-2 py-2 text-center border"
+                        >
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            value={siswa.harian[kolomIndex] ?? ""}
+                            onChange={(e) =>
+                              updateNilai(
+                                siswaIndex,
+                                "harian",
+                                kolomIndex,
+                                e.target.value
+                              )
+                            }
+                            className="w-16 px-2 py-1 border rounded text-center text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                            placeholder="-"
+                          />
+                        </td>
+                      )
+                    )}
                     <td className="px-2 py-2 text-center border">
                       <input
                         type="number"
@@ -379,7 +420,12 @@ const NilaiMapel = () => {
                       />
                     </td>
                     <td className="px-4 py-2 text-center border font-medium">
-                      {getRataRata(siswa.harian, siswa.uas, bobotNilai.bobotHarian, bobotNilai.bobotUas)}
+                      {getRataRata(
+                        siswa.harian,
+                        siswa.uas,
+                        bobotNilai.bobotHarian,
+                        bobotNilai.bobotUas
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -415,7 +461,10 @@ const NilaiMapel = () => {
           <li>• Maksimal 8 kolom nilai harian</li>
           <li>• Nilai akhir dihitung berdasarkan bobot yang ditentukan</li>
           <li>• Klik "Simpan Data" untuk menyimpan semua perubahan</li>
-          <li>• Siswa yang ditambahkan akan otomatis tersedia di semua mata pelajaran kelas ini</li>
+          <li>
+            • Siswa yang ditambahkan akan otomatis tersedia di semua mata
+            pelajaran kelas ini
+          </li>
         </ul>
       </div>
 
@@ -424,7 +473,9 @@ const NilaiMapel = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">Tambah Siswa Baru</h3>
+              <h3 className="text-xl font-semibold text-gray-800">
+                Tambah Siswa Baru
+              </h3>
               <button
                 onClick={() => {
                   setShowAddSiswaModal(false);
@@ -432,8 +483,18 @@ const NilaiMapel = () => {
                 }}
                 className="text-gray-500 hover:text-gray-700"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -446,7 +507,9 @@ const NilaiMapel = () => {
                 <input
                   type="text"
                   value={newSiswa.nisn}
-                  onChange={(e) => setNewSiswa({ ...newSiswa, nisn: e.target.value })}
+                  onChange={(e) =>
+                    setNewSiswa({ ...newSiswa, nisn: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Masukkan NISN"
                 />
@@ -459,7 +522,9 @@ const NilaiMapel = () => {
                 <input
                   type="text"
                   value={newSiswa.nama}
-                  onChange={(e) => setNewSiswa({ ...newSiswa, nama: e.target.value })}
+                  onChange={(e) =>
+                    setNewSiswa({ ...newSiswa, nama: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Masukkan nama lengkap"
                 />
@@ -473,7 +538,9 @@ const NilaiMapel = () => {
                   type="number"
                   min="1"
                   value={newSiswa.noAbsen}
-                  onChange={(e) => setNewSiswa({ ...newSiswa, noAbsen: e.target.value })}
+                  onChange={(e) =>
+                    setNewSiswa({ ...newSiswa, noAbsen: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Masukkan no. absen"
                 />
@@ -481,7 +548,8 @@ const NilaiMapel = () => {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm text-blue-800">
-                  <strong>Info:</strong> Siswa yang ditambahkan akan otomatis tersedia di semua mata pelajaran untuk {namaKelas}
+                  <strong>Info:</strong> Siswa yang ditambahkan akan otomatis
+                  tersedia di semua mata pelajaran untuk {namaKelas}
                 </p>
               </div>
             </div>

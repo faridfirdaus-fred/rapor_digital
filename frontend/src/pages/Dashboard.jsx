@@ -2,7 +2,7 @@ import React from "react";
 import Navbar from "../components/Navbar";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import DaftarMapel from "./DaftarMapel";
-import Perankingan from "./Perankingan";
+import Perankingan from "./perankingan";
 import NilaiMapel from "./NilaiMapel";
 import BobotNilai from "./BobotNilai";
 import ProfilePage from "./ProfilePage";

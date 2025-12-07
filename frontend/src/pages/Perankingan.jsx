@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/useAuth";
+import { API_URL } from "../services/api";
 
 const Perankingan = () => {
   const { token, user } = useAuth();
@@ -26,7 +27,7 @@ const Perankingan = () => {
 
         // Fetch ranking data
         const rankingResponse = await axios.get(
-          `http://localhost:5000/api/nilai/ranking/${user.kelasId}`,
+          `${API_URL}/nilai/ranking/${user.kelasId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -34,7 +35,7 @@ const Perankingan = () => {
 
         // Fetch siswa data to get details (NISN, nama, noAbsen)
         const siswaResponse = await axios.get(
-          `http://localhost:5000/api/siswa?kelasId=${user.kelasId}`,
+          `${API_URL}/siswa?kelasId=${user.kelasId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -42,7 +43,7 @@ const Perankingan = () => {
 
         // Fetch kelas data to get kelas name
         const kelasResponse = await axios.get(
-          `http://localhost:5000/api/kelas/${user.kelasId}`,
+          `${API_URL}/kelas/${user.kelasId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -153,7 +154,8 @@ const Perankingan = () => {
       <div className="p-8 min-h-screen bg-gray-50">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <p className="text-yellow-800">
-            Belum ada data nilai untuk kelas ini. Silakan input nilai terlebih dahulu.
+            Belum ada data nilai untuk kelas ini. Silakan input nilai terlebih
+            dahulu.
           </p>
         </div>
       </div>
@@ -328,7 +330,8 @@ const Perankingan = () => {
         <ul className="text-sm text-gray-600 space-y-1">
           <li>• Klik header kolom untuk mengurutkan data</li>
           <li>
-            • Perankingan dihitung berdasarkan rata-rata nilai akhir semua mata pelajaran
+            • Perankingan dihitung berdasarkan rata-rata nilai akhir semua mata
+            pelajaran
           </li>
           <li>• Siswa dengan ranking 1-3 mendapat highlight khusus</li>
           <li>

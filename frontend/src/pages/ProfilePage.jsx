@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/useAuth";
+import { API_URL, BASE_URL } from "../services/api";
 
 const ProfilePage = () => {
   const { token, login } = useAuth();
@@ -19,12 +20,12 @@ const ProfilePage = () => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:5000/api/auth/profile", {
+        const response = await axios.get(`${API_URL}/auth/profile`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        
+
         const profileData = response.data.profile;
         setProfile(profileData);
         setEditData({
@@ -37,7 +38,7 @@ const ProfilePage = () => {
         setLoading(false);
       }
     };
-    
+
     fetchProfile();
   }, [token]);
 
@@ -56,7 +57,7 @@ const ProfilePage = () => {
         alert("Ukuran file maksimal 5MB");
         return;
       }
-      
+
       setPhotoFile(file);
       setPhotoPreview(URL.createObjectURL(file));
     }
@@ -65,37 +66,33 @@ const ProfilePage = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      
+
       const formData = new FormData();
       formData.append("name", editData.name);
-      
+
       if (photoFile) {
         formData.append("photo", photoFile);
       }
-      
-      const response = await axios.put(
-        "http://localhost:5000/api/auth/profile",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      
+
+      const response = await axios.put(`${API_URL}/auth/profile`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       // Update profile state
       const updatedUser = response.data.user;
       setProfile(updatedUser);
-      
+
       // Update auth context
       login(token, updatedUser);
-      
+
       // Reset form state
       setPhotoFile(null);
       setPhotoPreview(null);
       setIsEditing(false);
-      
+
       alert("Profil berhasil diperbarui!");
     } catch (error) {
       console.error("Failed to update profile:", error);
@@ -137,7 +134,7 @@ const ProfilePage = () => {
 
   const getProfilePhoto = () => {
     if (photoPreview) return photoPreview;
-    if (profile?.photo) return `http://localhost:5000${profile.photo}`;
+    if (profile?.photo) return `${BASE_URL}${profile.photo}`;
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
       profile?.name || "User"
     )}&background=2563eb&color=fff&size=200`;
@@ -310,11 +307,14 @@ const ProfilePage = () => {
                     <span className="text-gray-500">Terdaftar sejak:</span>
                     <p className="text-gray-900 font-medium">
                       {profile?.createdAt
-                        ? new Date(profile.createdAt).toLocaleDateString("id-ID", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
+                        ? new Date(profile.createdAt).toLocaleDateString(
+                            "id-ID",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )
                         : "-"}
                     </p>
                   </div>
@@ -322,11 +322,14 @@ const ProfilePage = () => {
                     <span className="text-gray-500">Terakhir diupdate:</span>
                     <p className="text-gray-900 font-medium">
                       {profile?.updatedAt
-                        ? new Date(profile.updatedAt).toLocaleDateString("id-ID", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })
+                        ? new Date(profile.updatedAt).toLocaleDateString(
+                            "id-ID",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            }
+                          )
                         : "-"}
                     </p>
                   </div>
