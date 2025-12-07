@@ -333,6 +333,42 @@ Nilai Akhir = (85 × 40) + (88 × 60) / 100
 3. Periksa apakah ada spasi atau karakter tersembunyi di kolom NISN
 4. Coba hapus dan ketik ulang NISN di Excel
 
+### Problem: Import Sukses Tapi Hanya Sebagian Data (Misal: 17 dari 28)
+
+**Penyebab:**
+- Ada **duplikasi NISN** - beberapa siswa di Excel memiliki NISN yang sama dengan siswa yang sudah ada di database
+- Ada **duplikasi No Absen** - beberapa siswa di Excel memiliki No Absen yang sama dengan siswa lain
+- Ada **data kosong** di kolom NISN atau Nama
+
+**Solusi:**
+1. **Buka Browser Console** (tekan F12)
+2. Lihat di tab **Console** untuk melihat detail error
+3. Cari log yang dimulai dengan `❌ Gagal membuat siswa baris XX:`
+4. Error akan menunjukkan masalah spesifik, contoh:
+   - `NISN 1212121 sudah digunakan oleh siswa lain` → Ganti NISN atau skip baris ini
+   - `Nomor absen 5 sudah digunakan` → Ganti No Absen atau skip baris ini
+   - `NISN dan Nama harus diisi` → Isi kolom yang kosong
+
+**Contoh di Console:**
+```
+🔄 Mencoba membuat siswa baru: Ahmad (NISN: 123456, No Absen: 1)
+✅ Siswa baru dibuat: Ahmad (NISN: 123456)
+🔄 Mencoba membuat siswa baru: Budi (NISN: 123456, No Absen: 2)
+❌ Gagal membuat siswa baris 3: NISN 123456 sudah digunakan oleh siswa lain
+=== IMPORT SUMMARY ===
+Total data di Excel: 28
+Berhasil diimport: 17
+Siswa baru dibuat: 17
+Gagal/Error: 11
+```
+
+**Langkah Perbaikan:**
+1. Export data siswa yang sudah ada untuk cek NISN/No Absen yang sudah dipakai
+2. Perbaiki Excel dengan NISN/No Absen yang unik
+3. Hapus baris yang duplikat atau siswa yang sudah ada
+4. Import ulang file yang sudah diperbaiki
+5. Periksa console lagi untuk memastikan semua berhasil
+
 ### Problem: Nilai Akhir Tidak Sesuai
 
 **Solusi:**

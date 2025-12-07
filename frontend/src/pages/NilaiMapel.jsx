@@ -472,6 +472,11 @@ const NilaiMapel = () => {
         // Debug: Log raw data to see column names
         console.log("Raw Excel Data (first row):", jsonData[0]);
         console.log("Available columns:", Object.keys(jsonData[0] || {}));
+        
+        // Log all column names containing "Harian"
+        const harianColumns = Object.keys(jsonData[0] || {}).filter(key => key.includes("Harian") || key.includes("harian"));
+        console.log("Kolom Harian yang ditemukan:", harianColumns);
+        console.log("Kolom UAS:", jsonData[0]?.UAS !== undefined ? "Ada" : "Tidak ada");
 
         // Debug: Log siswa list for comparison
         console.log("Siswa di database:", updatedSiswaList.map(s => ({
@@ -537,6 +542,8 @@ const NilaiMapel = () => {
                   ? rowAbsen 
                   : Math.max(0, ...updatedSiswaList.map(s => s.absen)) + 1;
 
+                console.log(`🔄 Mencoba membuat siswa baru: ${rowNama} (NISN: ${rowNISN}, No Absen: ${noAbsen})`);
+
                 // Create siswa via API
                 const createResponse = await axios.post(
                   `${API_URL}/siswa`,
@@ -565,22 +572,51 @@ const NilaiMapel = () => {
 
                 console.log(`✅ Siswa baru dibuat: ${rowNama} (NISN: ${rowNISN})`);
               } catch (createError) {
+                const errorMsg = createError.response?.data?.error || createError.message;
+                console.error(`❌ Gagal membuat siswa baris ${index + 2}:`, errorMsg);
                 errors.push(
-                  `Baris ${index + 2}: Gagal membuat siswa ${rowNama} - ${createError.response?.data?.error || createError.message}`
+                  `Baris ${index + 2} (${rowNama}): ${errorMsg}`
                 );
                 errorCount++;
                 continue;
               }
             }
 
-            // Extract nilai harian
+            // Extract nilai harian - support both "Harian 1" and "harian 1"
             const harianValues = [];
+            let harianCount = 0;
             for (let i = 1; i <= jumlahKolomHarian; i++) {
-              const key = `Harian ${i}`;
-              if (row[key] !== undefined && row[key] !== "-" && row[key] !== "") {
-                const nilai = parseFloat(row[key]);
+              // Try multiple variations of column names
+              const possibleKeys = [
+                `Harian ${i}`,
+                `harian ${i}`,
+                `HARIAN ${i}`,
+                `Harian${i}`,
+                `harian${i}`
+              ];
+              
+              let value = undefined;
+              let foundKey = null;
+              
+              // Find which key exists in the row
+              for (const key of possibleKeys) {
+                if (row[key] !== undefined) {
+                  value = row[key];
+                  foundKey = key;
+                  break;
+                }
+              }
+              
+              // Debug log untuk siswa pertama
+              if (index === 0) {
+                console.log(`Kolom ${i}: mencari [${possibleKeys.join(", ")}], ditemukan: ${foundKey || "tidak ada"}, nilai: ${value}`);
+              }
+              
+              if (value !== undefined && value !== "-" && value !== "" && value !== null) {
+                const nilai = parseFloat(value);
                 if (!isNaN(nilai) && nilai >= 0 && nilai <= 100) {
                   harianValues.push(nilai);
+                  harianCount++;
                 } else {
                   harianValues.push(null);
                 }
@@ -589,35 +625,66 @@ const NilaiMapel = () => {
               }
             }
 
-            // Extract UAS
+            // Extract UAS - support multiple variations
             let uasValue = null;
-            if (row.UAS !== undefined && row.UAS !== "-" && row.UAS !== "") {
-              const uas = parseFloat(row.UAS);
+            const uasRaw = row.UAS || row.uas || row.Uas || row["UAS "] || row["uas"];
+            if (uasRaw !== undefined && uasRaw !== "-" && uasRaw !== "" && uasRaw !== null) {
+              const uas = parseFloat(uasRaw);
               if (!isNaN(uas) && uas >= 0 && uas <= 100) {
                 uasValue = uas;
               }
             }
 
+            // Log nilai yang akan diimport
+            console.log(`📝 Import nilai untuk ${rowNama}:`, {
+              harian: harianValues,
+              harianCount: harianCount,
+              uas: uasValue,
+              siswaIndex: siswaIndex
+            });
+
             // Update siswa data with nilai
             updatedSiswaList[siswaIndex].harian = harianValues;
             updatedSiswaList[siswaIndex].uas = uasValue;
             importedCount++;
+            
+            console.log(`✅ Nilai terupdate untuk ${rowNama}:`, updatedSiswaList[siswaIndex]);
           } catch (err) {
             errors.push(`Baris ${index + 2}: ${err.message}`);
             errorCount++;
           }
         }
 
+        // Log data sebelum set state
+        console.log("📦 Data yang akan di-set ke state:", updatedSiswaList.map(s => ({
+          nama: s.nama,
+          harian: s.harian,
+          uas: s.uas
+        })));
+
         setSiswaList(updatedSiswaList);
+
+        // Log summary
+        console.log("=== IMPORT SUMMARY ===");
+        console.log(`Total data di Excel: ${jsonData.length}`);
+        console.log(`Berhasil diimport: ${importedCount}`);
+        console.log(`Siswa baru dibuat: ${newSiswaCreated.length}`);
+        console.log(`Gagal/Error: ${errorCount}`);
+        if (errors.length > 0) {
+          console.log("Errors:", errors);
+        }
 
         // Show result with info about new siswa
         if (importedCount > 0 || newSiswaCreated.length > 0) {
           let message = "";
           if (newSiswaCreated.length > 0) {
-            message += `✨ ${newSiswaCreated.length} siswa baru dibuat: ${newSiswaCreated.join(", ")}. `;
+            message += `✨ ${newSiswaCreated.length} siswa baru dibuat: ${newSiswaCreated.slice(0, 5).join(", ")}${newSiswaCreated.length > 5 ? "..." : ""}. `;
           }
           if (importedCount > 0) {
-            message += `📊 Berhasil import ${importedCount} data nilai.`;
+            message += `📊 Berhasil import ${importedCount} dari ${jsonData.length} data nilai.`;
+          }
+          if (errorCount > 0) {
+            message += `\n\n⚠️ ${errorCount} data gagal diimport. Lihat console untuk detail.`;
           }
           message += ` Jangan lupa klik "Simpan Semua Nilai"!`;
 
@@ -625,14 +692,14 @@ const NilaiMapel = () => {
             isOpen: true,
             type: errorCount > 0 ? "warning" : "success",
             title: errorCount > 0 ? "Import Selesai dengan Peringatan" : "Berhasil!",
-            message: message + (errorCount > 0 ? ` ${errorCount} data gagal.` : ""),
+            message: message,
           });
         } else {
           setAlert({
             isOpen: true,
             type: "error",
             title: "Gagal Import",
-            message: `Tidak ada data yang berhasil di-import. ${errors.slice(0, 3).join(", ")}`,
+            message: `Tidak ada data yang berhasil di-import dari ${jsonData.length} baris.\n\nError:\n${errors.slice(0, 5).join("\n")}\n\nLihat console untuk detail lengkap.`,
           });
         }
 
@@ -900,19 +967,13 @@ const NilaiMapel = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
-            >
-              Reset
-            </button>
+          <div className="mt-6 flex justify-end">
             <button
               onClick={simpanNilai}
               disabled={saving}
               className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:bg-gray-400"
             >
-              {saving ? "Menyimpan..." : "Simpan Data"}
+              {saving ? "Menyimpan..." : "Simpan Semua Nilai"}
             </button>
           </div>
         </>
